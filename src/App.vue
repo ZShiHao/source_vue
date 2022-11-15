@@ -1,17 +1,27 @@
 <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <ModelComponent v-model="text"/>
+    {{text}}
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import ModelComponent from './components/ModelComponent.vue'
 export default {
-  name: 'App',
+ name: 'App',
+ data() {
+  return {
+   text:'zhang'
+  }
+ },
+ methods: {
+  handle(e) {
+   this.text=e
+  }
+ },
   components: {
-    HelloWorld
+  ModelComponent
   }
 }
 </script>

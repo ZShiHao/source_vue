@@ -1,13 +1,16 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <ModelComponent v-model="text"/>
-    {{text}}
+<!--    <img alt="Vue logo" src="./assets/logo.png">-->
+<!--    <ModelComponent v-model="text"/>-->
+<!--    {{text}}-->
+    <ComponentClass value="first component instance"></ComponentClass>
+    <ComponentClass value="second component instance"></ComponentClass>
   </div>
 </template>
 
 <script>
-import ModelComponent from './components/ModelComponent.vue'
+// import ModelComponent from './components/ModelComponent.vue'
+import ComponentClass from "@/components/ComponentClass";
 export default {
  name: 'App',
  data() {
@@ -21,7 +24,8 @@ export default {
   }
  },
   components: {
-  ModelComponent
+  // ModelComponent,
+    ComponentClass
   }
 }
 </script>

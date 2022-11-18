@@ -8,7 +8,6 @@
 export default {
   props:['value'],
   created() {
-    console.log(this)
   }
 }
 </script>

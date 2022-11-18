@@ -11827,7 +11827,8 @@
       }
       var options = this.$options;
       // resolve template/el and convert to render function
-      console.log(options)
+      console.log(this)
+      console.log(options.render)
       if (!options.render) {
           console.log(123)
           var template = options.template;

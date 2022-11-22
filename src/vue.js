@@ -631,7 +631,7 @@
   // multiple renders, cloning them avoids errors when DOM manipulations rely
   // on their elm reference.
   function cloneVNode(vnode) {
-      var cloned = new VNode(vnode.tag, vnode.data, 
+      var cloned = new VNode(vnode.tag, vnode.data,
       // #7975
       // clone children array to avoid mutating original in case of cloning
       // a child.
@@ -1746,9 +1746,20 @@
       if (isTrue(alwaysNormalize)) {
           normalizationType = ALWAYS_NORMALIZE;
       }
-      return _createElement(context, tag, data, children, normalizationType);
+      const e=_createElement(context, tag, data, children, normalizationType);
+      console.log('_createElement',e)
+      return e
+      // return _createElement(context, tag, data, children, normalizationType);
   }
+ /*
+ * data:{}
+ *
+ * */
+  // 创建虚拟dom
   function _createElement(context, tag, data, children, normalizationType) {
+      console.log('createElementContext',context)
+      console.log('tag',tag)
+      console.log('data',data)
       if (isDef(data) && isDef(data.__ob__)) {
           warn$2("Avoid using observed data object as vnode data: ".concat(JSON.stringify(data), "\n") + 'Always create fresh vnode data objects in each render!', context);
           return createEmptyVNode();
@@ -2064,7 +2075,7 @@
       return data;
   }
 
-  function resolveScopedSlots(fns, res, 
+  function resolveScopedSlots(fns, res,
   // the following are added in 2.6
   hasDynamicKeys, contentHashKey) {
       res = res || { $stable: !hasDynamicKeys };
@@ -4116,7 +4127,7 @@
    */
   var Watcher = /** @class */ (function () {
       function Watcher(vm, expOrFn, cb, options, isRenderWatcher) {
-          recordEffectScope(this, 
+          recordEffectScope(this,
           // if the active effect scope is manually created (not a component scope),
           // prioritize it
           activeEffectScope && !activeEffectScope._vm
@@ -5026,14 +5037,14 @@
       var name = getComponentName(Ctor.options) || tag;
       var vnode = new VNode(
       // @ts-expect-error
-      "vue-component-".concat(Ctor.cid).concat(name ? "-".concat(name) : ''), data, undefined, undefined, undefined, context, 
+      "vue-component-".concat(Ctor.cid).concat(name ? "-".concat(name) : ''), data, undefined, undefined, undefined, context,
       // @ts-expect-error
       { Ctor: Ctor, propsData: propsData, listeners: listeners, tag: tag, children: children }, asyncFactory);
       return vnode;
   }
   function createComponentInstanceForVnode(
   // we know it's MountedComponentVNode but flow doesn't
-  vnode, 
+  vnode,
   // activeInstance in lifecycle state
   parent) {
       var options = {
@@ -7124,7 +7135,7 @@
                   var oldElm = oldVnode.elm;
                   var parentElm = nodeOps.parentNode(oldElm);
                   // create new node
-                  createElm(vnode, insertedVnodeQueue, 
+                  createElm(vnode, insertedVnodeQueue,
                   // extremely rare edge case: do not insert if old element is in a
                   // leaving transition. Only happens when combining transition +
                   // keep-alive + HOCs. (#4590)
@@ -7500,7 +7511,7 @@
               if (c === 0x2f) {
                   // /
                   var j = i - 1;
-                  var p 
+                  var p
                   // find first non-whitespace prev char
                   = void 0;
                   // find first non-whitespace prev char
@@ -8024,7 +8035,7 @@
       target.addEventListener(name, handler, supportsPassive ? { capture: capture, passive: passive } : capture);
   }
   function remove(name, handler, capture, _target) {
-      (_target || target).removeEventListener(name, 
+      (_target || target).removeEventListener(name,
       //@ts-expect-error
       handler._wrapper || handler, capture);
   }
@@ -9786,6 +9797,14 @@
   var platformMustUseProp;
   var platformGetTagNamespace;
   var maybeComponent;
+
+        /**
+         *
+         * @param tag
+         * @param attrs
+         * @param parent
+         * @returns {{parent, children: *[], attrsMap: {}, attrsList, rawAttrsMap: {}, tag, type: number}} ast
+         */
   function createASTElement(tag, attrs, parent) {
       return {
           type: 1,
@@ -9797,9 +9816,26 @@
           children: []
       };
   }
-  /**
-   * Convert HTML string to AST.
-   */
+
+        /**
+         * 词法分析,解析html字符串,生成抽象语法树
+         * @param template
+         * @param options
+         * @returns {*} ast {attrs:元素的属性,attrsList:元素的所有属性,attrsMap:属性名属性值得映射,}
+         * {
+         *     attrs:[]元素的属性,v-bind绑定的,
+         *     attrsList:[]元素的所有属性,
+         *     attrsMap:{}元素所有的属性名和属性值得映射
+         *     parent:ast,父元素的额ast
+         *     children:[ast] 子元素的ast
+         *     directives:[]元素指令,只有show指令
+         *     envents:{} 事件处理函数
+         *     for:String for执行遍历的数组
+         *     hasBindings:true,
+         *     staticClass:string, css类名
+         *     tag:string
+         * }
+         */
   function parse(template, options) {
       warn = options.warn || baseWarn;
       platformIsPreTag = options.isPreTag || no;
@@ -9907,6 +9943,8 @@
                   'it renders multiple elements.', el.rawAttrsMap['v-for']);
           }
       }
+
+      console.log('root',root)
       parseHTML(template, {
           warn: warn,
           expectHTML: options.expectHTML,
@@ -10096,7 +10134,7 @@
               }
           }
       });
-      return root;
+      return root; // ast
   }
   function processPre(el) {
       if (getAndRemoveAttr(el, 'v-pre') != null) {
@@ -10976,19 +11014,35 @@
       }
       return CodegenState;
   }());
+
+        /**
+         * 根据ast,生成render函数
+         * @param ast
+         * @param options
+         * @returns {{staticRenderFns: [], render: string}}
+         */
   function generate(ast, options) {
       var state = new CodegenState(options);
+      console.log('generateFnState',state)
       // fix #11483, Root level <script> tags should not be rendered.
       var code = ast
           ? ast.tag === 'script'
               ? 'null'
               : genElement(ast, state)
           : '_c("div")';
+      console.log('generateFnCode',code)
       return {
           render: "with(this){return ".concat(code, "}"),
           staticRenderFns: state.staticRenderFns
       };
   }
+
+        /**
+         *
+         * @param el ast
+         * @param state
+         * @returns {string|string|*|string}
+         */
   function genElement(el, state) {
       if (el.parent) {
           el.pre = el.pre || el.parent.pre;
@@ -11023,7 +11077,7 @@
               if (!el.plain || (el.pre && maybeComponent)) {
                   data = genData(el, state);
               }
-              var tag 
+              var tag
               // check if this is a component in <script setup>
               = void 0;
               // check if this is a component in <script setup>
@@ -11646,6 +11700,7 @@
   function createCompileToFunctionFn(compile) {
       var cache = Object.create(null);
       return function compileToFunctions(template, options, vm) {
+          //
           options = extend({}, options);
           var warn = options.warn || warn$2;
           delete options.warn;
@@ -11702,6 +11757,7 @@
           var res = {};
           var fnGenErrors = [];
           res.render = createFunction(compiled.render, fnGenErrors);
+          console.log('res.render',res.render)
           res.staticRenderFns = compiled.staticRenderFns.map(function (code) {
               return createFunction(code, fnGenErrors);
           });
@@ -11726,6 +11782,7 @@
 
   function createCompilerCreator(baseCompile) {
       return function createCompiler(baseOptions) {
+          // 输出{ast:ast,render:code}
           function compile(template, options) {
               var finalOptions = Object.create(baseOptions);
               var errors = [];
@@ -11770,6 +11827,7 @@
               {
                   detectErrors(compiled.ast, warn);
               }
+              console.log('compiled',compiled)
               compiled.errors = errors;
               compiled.tips = tips;
               return compiled;
@@ -11781,22 +11839,29 @@
       };
   }
 
+
   // `createCompilerCreator` allows creating compilers that use alternative
   // parser/optimizer/codegen, e.g the SSR optimizing compiler.
   // Here we just export a default compiler using the default parts.
   var createCompiler = createCompilerCreator(function baseCompile(template, options) {
+      /**
+       * template {string}
+       * @type {ast}
+       */
       var ast = parse(template.trim(), options);
       if (options.optimize !== false) {
           optimize(ast, options);
       }
+      console.log('ast',ast)
       var code = generate(ast, options);
+      console.log('code',code)
       return {
           ast: ast,
           render: code.render,
           staticRenderFns: code.staticRenderFns
       };
   });
-
+    // 返回{compile:compile}
   var _a = createCompiler(baseOptions), compileToFunctions = _a.compileToFunctions;
 
   // check whether current browser encodes a char inside attribute values
@@ -11827,10 +11892,7 @@
       }
       var options = this.$options;
       // resolve template/el and convert to render function
-      console.log(this)
-      console.log(options.render)
       if (!options.render) {
-          console.log(123)
           var template = options.template;
           if (template) {
               if (typeof template === 'string') {

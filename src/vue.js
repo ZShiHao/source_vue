@@ -905,6 +905,13 @@
    * collect dependencies and dispatch updates.
    */
   var Observer = /** @class */ (function () {
+      /**
+       *
+       * @param value {object} 观察_data对象
+       * @param shallow
+       * @param mock
+       * @constructor
+       */
       function Observer(value, shallow, mock) {
           if (shallow === void 0) { shallow = false; }
           if (mock === void 0) { mock = false; }
@@ -914,7 +921,7 @@
           // this.value = value
           this.dep = mock ? mockDep : new Dep();
           this.vmCount = 0;
-          def(value, '__ob__', this);
+          def(value, '__ob__', this); // 给观察的对象添加一个
           if (isArray(value)) {
               if (!mock) {
                   if (hasProto) {
@@ -978,6 +985,15 @@
   /**
    * Define a reactive property on an Object.
    */
+        /**
+         *
+         * @param obj {object} _data对象
+         * @param key {string} 对象的属性
+         * @param val
+         * @param customSetter
+         * @param shallow
+         * @param mock
+         */
   function defineReactive(obj, key, val, customSetter, shallow, mock) {
       var dep = new Dep();
       var property = Object.getOwnPropertyDescriptor(obj, key);
@@ -1747,7 +1763,6 @@
           normalizationType = ALWAYS_NORMALIZE;
       }
       const e=_createElement(context, tag, data, children, normalizationType);
-      console.log('_createElement',e)
       return e
       // return _createElement(context, tag, data, children, normalizationType);
   }
@@ -1757,9 +1772,6 @@
  * */
   // 创建虚拟dom
   function _createElement(context, tag, data, children, normalizationType) {
-      console.log('createElementContext',context)
-      console.log('tag',tag)
-      console.log('data',data)
       if (isDef(data) && isDef(data.__ob__)) {
           warn$2("Avoid using observed data object as vnode data: ".concat(JSON.stringify(data), "\n") + 'Always create fresh vnode data objects in each render!', context);
           return createEmptyVNode();
@@ -1863,6 +1875,8 @@
 
   /**
    * Runtime helper for rendering v-for lists.
+   * @param val {Array,Object}
+   * @param render {function} _c的外层包裹函数
    */
   function renderList(val, render) {
       var ret = null, i, l, keys, key;
@@ -3668,6 +3682,13 @@
    * @internal this function needs manual public type declaration because it relies
    * on previously manually authored types from Vue 2
    */
+        /**
+         *
+         * @param type {string} tag
+         * @param props {object} data
+         * @param children {[]} children
+         * @returns {VNode|VNode|any[]}
+         */
   function h(type, props, children) {
       if (!currentInstance) {
           warn$2("globally imported h() can only be invoked when there is an active " +
@@ -4126,6 +4147,16 @@
    * @internal
    */
   var Watcher = /** @class */ (function () {
+      // expOrFn
+      /**
+       *
+       * @param vm
+       * @param expOrFn {String||function}
+       * @param cb {function}
+       * @param options {}
+       * @param isRenderWatcher
+       * @constructor
+       */
       function Watcher(vm, expOrFn, cb, options, isRenderWatcher) {
           recordEffectScope(this,
           // if the active effect scope is manually created (not a component scope),
@@ -4319,22 +4350,30 @@
       };
       return Watcher;
   }());
-
+  // Object.defineProperty的第三个参数,descriptor
   var sharedPropertyDefinition = {
       enumerable: true,
       configurable: true,
       get: noop,
       set: noop
   };
+
+        /**
+         * 代理对象的某个属性
+         * @param target {object} vm
+         * @param sourceKey {string} _data
+         * @param key {string}  data的key
+         */
   function proxy(target, sourceKey, key) {
       sharedPropertyDefinition.get = function proxyGetter() {
-          return this[sourceKey][key];
+          return this[sourceKey][key]; //返回vm._data[key]
       };
       sharedPropertyDefinition.set = function proxySetter(val) {
           this[sourceKey][key] = val;
       };
       Object.defineProperty(target, key, sharedPropertyDefinition);
   }
+  // 初始化vm实例的状态(props,data,methods,computed,watch)
   function initState(vm) {
       var opts = vm.$options;
       if (opts.props)
@@ -4398,8 +4437,9 @@
       }
       toggleObserving(true);
   }
+  //初始化vm的data属性
   function initData(vm) {
-      var data = vm.$options.data;
+      var data = vm.$options.data; //data是function,调用会才会合并data对象
       data = vm._data = isFunction(data) ? getData(data, vm) : data || {};
       if (!isPlainObject(data)) {
           data = {};
@@ -4411,6 +4451,7 @@
       var props = vm.$options.props;
       var methods = vm.$options.methods;
       var i = keys.length;
+      //将vm._data中的每个属性都添加到vm对象上,同时设置代理,实际访问的是_data上的属性
       while (i--) {
           var key = keys[i];
           {
@@ -4426,7 +4467,7 @@
               proxy(vm, "_data", key);
           }
       }
-      // observe data
+      // observe data vm._data
       var ob = observe(data);
       ob && ob.vmCount++;
   }
@@ -4726,7 +4767,7 @@
           initInjections(vm); // resolve injections before data/props
           initState(vm);
           initProvide(vm); // resolve provide after data/props
-          callHook$1(vm, 'created');
+          callHook$1(vm, 'created'); // 实例创建完成
           /* istanbul ignore if */
           if (config.performance && mark) {
               vm._name = formatComponentName(vm, false);
@@ -4754,6 +4795,12 @@
           opts.staticRenderFns = options.staticRenderFns;
       }
   }
+
+        /**
+         * 解析构造函数上的option
+         * @param Ctor {object} Vue
+         * @returns {{}} Vue.options
+         */
   function resolveConstructorOptions(Ctor) {
       //返回类上的options (三种Assets)
       var options = Ctor.options;
@@ -5242,6 +5289,13 @@
   /**
    * Data
    */
+        /**
+         *
+         * @param parentVal
+         * @param childVal
+         * @param vm
+         * @returns {(function(): (*))|*|(function(): *)}
+         */
   function mergeDataOrFn(parentVal, childVal, vm) {
       if (!vm) {
           // in a Vue.extend merge, both should be functions
@@ -5278,6 +5332,14 @@
           };
       }
   }
+
+        /**
+         * 返回了一个可以合并data数据的函数,函数通过闭包保存了子data和父data
+         * @param parentVal
+         * @param childVal
+         * @param vm
+         * @returns {*|(function(): *)|(function(): (*))}
+         */
   strats.data = function (parentVal, childVal, vm) {
       if (!vm) {
           if (childVal && typeof childVal !== 'function') {
@@ -5514,6 +5576,13 @@
    * Merge two option objects into a new one.
    * Core utility used in both instantiation and inheritance.
    */
+        /**
+         * 合并options对象
+         * @param parent {object} Vue.options
+         * @param child {object} options
+         * @param vm {{}}
+         * @returns {{}} options
+         */
   function mergeOptions(parent, child, vm) {
       {
           checkComponents(child); //检验options的key名是否正确
@@ -5832,7 +5901,7 @@
        * cid. This enables us to create wrapped "child
        * constructors" for prototypal inheritance and cache them.
        */
-      Vue.cid = 0;
+      Vue.cid = 0;//每个实例的类,都有一个独立的cid
       var cid = 1;
       /**
        * Class inheritance
@@ -11882,8 +11951,10 @@
       var el = query(id);
       return el && el.innerHTML;
   });
-  var mount = Vue.prototype.$mount;
+  var mount = Vue.prototype.$mount;  // 不带编译的$mount
   Vue.prototype.$mount = function (el, hydrating) {
+      // el是需要挂载到的元素
+      // 挂载组件,带模板编译,就是判断一下是否有render函数了,如果没有,就把template编译成render函数
       el = el && query(el); //返回dom元素
       /* istanbul ignore if */
       if (el === document.body || el === document.documentElement) {

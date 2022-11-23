@@ -1,23 +1,39 @@
+const textComponent={
+    data(){
+        return {
+            text:'zhang'
+        }
+    },
+    template:'<div>{{text}}<input v-model="text"/></div>'
+}
+
+
 const App = {
     name: 'App',
     data() {
         return {
             text: 'zhang',
-            show: false,
-            items: [1, 2, 3]
+            show: true,
         }
     },
-    methods: {
-        handle() {
-
-        }
+    components:{
+        textComponent
     },
-    template: '<div v-for="ite in items" v-show="show" @click="1+1" v-bind:value="text" class="hi"><h1>{{text}}</h1>zhang</div>'
+    template: '<div><text-component/><text-component></text-component></div>'
 }
 
 let vm = new Vue({
-    render: h => h(App),
-}).$mount('#app')
+    data(){
+        return {
+            show:true
+        }
+    },
+    components:{
+        textComponent
+    },
+    template:'<div><text-component/><text-component></text-component></div>'
+})
+vm.$mount('#app')
 console.log(vm)
 
 function render() {

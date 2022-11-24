@@ -580,6 +580,24 @@
    * @internal
    */
   var VNode = /** @class */ (function () {
+      /**
+       *
+       * @param tag {string}
+       * @param data {object} 标签的属性
+       * @param children
+       * @param text
+       * @param elm
+       * @param context {object} vm 父组件
+       * @param componentOptions {object} {
+       *     Ctor:子组件构造函数,
+       *     propsdata:,
+       *     listeners:,
+       *     tag:标签名,
+       *     children:子元素,
+       * }
+       * @param asyncFactory
+       * @constructor
+       */
       function VNode(tag, data, children, text, elm, context, componentOptions, asyncFactory) {
           this.tag = tag;
           this.data = data;
@@ -592,7 +610,7 @@
           this.fnOptions = undefined;
           this.fnScopeId = undefined;
           this.key = data && data.key;
-          this.componentOptions = componentOptions;
+          this.componentOptions = componentOptions; //组件的options,{Ctor:组件的构造函数}
           this.componentInstance = undefined;
           this.parent = undefined;
           this.raw = false;
@@ -771,7 +789,7 @@
           // pending subs cleanup
           this._pending = false;
           this.id = uid$2++;
-          this.subs = [];
+          this.subs = []; // Watchers
       }
       Dep.prototype.addSub = function (sub) {
           this.subs.push(sub);
@@ -919,9 +937,9 @@
           this.shallow = shallow;
           this.mock = mock;
           // this.value = value
-          this.dep = mock ? mockDep : new Dep();
+          this.dep = mock ? mockDep : new Dep(); //创建dep
           this.vmCount = 0;
-          def(value, '__ob__', this); // 给观察的对象添加一个
+          def(value, '__ob__', this); // 给每个观察的对象添加一个Observer对象
           if (isArray(value)) {
               if (!mock) {
                   if (hasProto) {
@@ -986,7 +1004,7 @@
    * Define a reactive property on an Object.
    */
         /**
-         *
+         * 取出_data属性原先的getter和setter闭包保存,同时设置新的getter和setter
          * @param obj {object} _data对象
          * @param key {string} 对象的属性
          * @param val
@@ -1766,11 +1784,23 @@
       return e
       // return _createElement(context, tag, data, children, normalizationType);
   }
- /*
- * data:{}
- *
- * */
-  // 创建虚拟dom
+
+        /**
+         *
+         * _render调用 _c\h\$createElement\createElement$1的底层调用
+         * @param context {object} vm
+         * @param tag {string}  元素名
+         * @param data {object} {
+         *     directives:show指令,
+         *     staticClass:css的class类
+         *     attrs:{'value':text} 标签属性值,
+         *     on:事件处理函数
+         * }
+         * @param children {[]} 子元素
+         * @param normalizationType
+         * @returns {VNode|*[]|VNode} 返回VNode
+         * @private
+         */
   function _createElement(context, tag, data, children, normalizationType) {
       if (isDef(data) && isDef(data.__ob__)) {
           warn$2("Avoid using observed data object as vnode data: ".concat(JSON.stringify(data), "\n") + 'Always create fresh vnode data objects in each render!', context);
@@ -1815,14 +1845,17 @@
               vnode = new VNode(config.parsePlatformTagName(tag), data, children, undefined, undefined, context);
           }
           else if ((!data || !data.pre) &&
-              isDef((Ctor = resolveAsset(context.$options, 'components', tag)))) {
+              isDef((Ctor = resolveAsset(context.$options, 'components', tag)))) {//判断vm是否有子组件
               // component
+              // Ctor===context.$options.components[tag] 子组件的options
+              // 如果$options中有components属性,有子组件,就创建子组件
               vnode = createComponent(Ctor, data, context, children, tag);
           }
           else {
               // unknown or unlisted namespaced elements
               // check at runtime because it may get assigned a namespace when its
               // parent normalizes children
+              // 没有子组件,不需要创建子组件,直接创建虚拟dom
               vnode = new VNode(tag, data, children, undefined, undefined, context);
           }
       }
@@ -2511,6 +2544,11 @@
       Vue.prototype.$nextTick = function (fn) {
           return nextTick(fn, this);
       };
+      /**
+       * 调用options中的render函数
+       * @returns {VNode}
+       * @private
+       */
       Vue.prototype._render = function () {
           var vm = this;
           var _a = vm.$options, render = _a.render, _parentVnode = _a._parentVnode;
@@ -2850,12 +2888,18 @@
       vm._isBeingDestroyed = false;
   }
   function lifecycleMixin(Vue) {
+      /**
+       * 渲染虚拟虚拟dom
+       * @param vnode
+       * @param hydrating
+       * @private
+       */
       Vue.prototype._update = function (vnode, hydrating) {
           var vm = this;
           var prevEl = vm.$el;
-          var prevVnode = vm._vnode;
+          var prevVnode = vm._vnode; // 之前的虚拟dom
           var restoreActiveInstance = setActiveInstance(vm);
-          vm._vnode = vnode;
+          vm._vnode = vnode; // 当前的虚拟dom
           // Vue.prototype.__patch__ is injected in entry points
           // based on the rendering backend used.
           if (!prevVnode) {
@@ -2930,6 +2974,15 @@
           }
       };
   }
+
+        /**
+         * vm.$mount调用
+         * beforeMount和mounted两个生命周期函数,创建Watcher
+         * @param vm {object}
+         * @param el {object}
+         * @param hydrating
+         * @returns {{$vnode}|*} vm
+         */
   function mountComponent(vm, el, hydrating) {
       vm.$el = el;
       if (!vm.$options.render) {
@@ -4151,7 +4204,7 @@
       /**
        *
        * @param vm
-       * @param expOrFn {String||function}
+       * @param expOrFn {String||function} updateComponent,vm._update
        * @param cb {function}
        * @param options {}
        * @param isRenderWatcher
@@ -4196,7 +4249,7 @@
           this.expression = expOrFn.toString() ;
           // parse expression for getter
           if (isFunction(expOrFn)) {
-              this.getter = expOrFn;
+              this.getter = expOrFn; //updateComponent
           }
           else {
               this.getter = parsePath(expOrFn);
@@ -4754,6 +4807,7 @@
               //
               vm.$options = mergeOptions(resolveConstructorOptions(vm.constructor), options || {}, vm);
           }
+          console.log('$options',vm.$options)
           /* istanbul ignore else */
           {
               initProxy(vm);
@@ -5013,14 +5067,24 @@
       }
   };
   var hooksToMerge = Object.keys(componentVNodeHooks);
+
+        /**
+         * 创建子组件的构造函数,同时创建子组件的Vnode
+         * @param Ctor {object} 组件的options对象
+         * @param data {object} 组件的属性
+         * @param context {object} vm 组件的父组件
+         * @param children {[]} 组件的子组件
+         * @param tag {sting}
+         * @returns {VNode|any[]}
+         */
   function createComponent(Ctor, data, context, children, tag) {
       if (isUndef(Ctor)) {
           return;
       }
-      var baseCtor = context.$options._base;
+      var baseCtor = context.$options._base; //Vue
       // plain options object: turn it into a constructor
       if (isObject(Ctor)) {
-          Ctor = baseCtor.extend(Ctor);
+          Ctor = baseCtor.extend(Ctor); //创建子组件的构造函数,继承自Vue构造函数
       }
       // if at this stage it's not a constructor or an async component factory,
       // reject.
@@ -5629,6 +5693,14 @@
    * This function is used because child instances need access
    * to assets defined in its ancestor chain.
    */
+        /**
+         *
+         * @param options {object} $options
+         * @param type {string}
+         * @param id {string} tag
+         * @param warnMissing
+         * @returns {*}
+         */
   function resolveAsset(options, type, id, warnMissing) {
       /* istanbul ignore if */
       if (typeof id !== 'string') {
@@ -5905,13 +5977,15 @@
       var cid = 1;
       /**
        * Class inheritance
+       * @param extendOptions {object} 子组件的options
        */
       Vue.extend = function (extendOptions) {
           extendOptions = extendOptions || {};
           var Super = this; //vue
           var SuperId = Super.cid;
-          var cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {});
+          var cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {}); //缓存过的子组件类
           if (cachedCtors[SuperId]) {
+              // 如果已经创建过子组件的构造函数了,就直接返回缓存过的组价的构造函数
               return cachedCtors[SuperId];
           }
           var name = getComponentName(extendOptions) || getComponentName(Super.options);
@@ -7155,6 +7229,10 @@
               return node.nodeType === (vnode.isComment ? 8 : 3);
           }
       }
+
+      /**
+       *
+       */
       return function patch(oldVnode, vnode, hydrating, removeOnly) {
           if (isUndef(vnode)) {
               if (isDef(oldVnode))
@@ -9393,6 +9471,12 @@
   // install platform patch function
   Vue.prototype.__patch__ = inBrowser ? patch : noop;
   // public mount method
+        /**
+         *
+         * @param el {object} 需要被挂载的dom对象
+         * @param hydrating
+         * @returns {object} vm 返回vue实例
+         */
   Vue.prototype.$mount = function (el, hydrating) {
       el = el && inBrowser ? query(el) : undefined;
       return mountComponent(this, el, hydrating);
@@ -11952,7 +12036,15 @@
       return el && el.innerHTML;
   });
   var mount = Vue.prototype.$mount;  // 不带编译的$mount
+        /**
+         * 先编译,后挂载
+         * @param el {string}
+         * @param hydrating
+         * @returns {{$vnode}|*|Vue}
+         */
   Vue.prototype.$mount = function (el, hydrating) {
+      console.log('vm',this)
+      console.log('el',el)
       // el是需要挂载到的元素
       // 挂载组件,带模板编译,就是判断一下是否有render函数了,如果没有,就把template编译成render函数
       el = el && query(el); //返回dom元素
